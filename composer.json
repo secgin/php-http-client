@@ -1,0 +1,17 @@
+{
+    "name": "secgin/php-http-client",
+    "description": "Http Client For PHP",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "S\\HttpClient\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "secgin"
+        }
+    ],
+    "require": {}
+}
