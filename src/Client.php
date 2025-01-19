@@ -2,88 +2,45 @@
 
 namespace S\HttpClient;
 
-use Exception;
+use S\HttpClient\Abstracts\AbstractClient;
 use S\HttpClient\Abstracts\Request;
 use S\HttpClient\Abstracts\Response;
 
-final class Client implements Abstracts\Client
+final class Client extends AbstractClient
 {
-    private ?string $baseUrl;
+    private $beforeSendCallback;
 
-    private array $defaultHeaders;
+    private $afterSendCallback;
 
-    public function __construct()
+    public function setBeforeSendCallback(callable $beforeSendCallback): void
     {
-        $this->baseUrl = null;
-        $this->defaultHeaders = [];
+        $this->beforeSendCallback = $beforeSendCallback;
     }
 
-    public function setBaseUrl(string $baseUrl): void
+    public function setAfterSendCallback(callable $afterSendCallback): void
     {
-        $this->baseUrl = $baseUrl;
-    }
-
-    public function setDefaultHeaders(array $defaultHeaders): void
-    {
-        $this->defaultHeaders = $defaultHeaders;
+        $this->afterSendCallback = $afterSendCallback;
     }
 
     public function send(Request $request): Response
     {
-        try
+        if (isset($this->beforeSendCallback))
         {
-            $headers = array_merge($this->defaultHeaders, $request->getHeaders());
-            $body = $request->getBody();
+            $func = $this->beforeSendCallback;
+            $result = call_user_func($func);
 
-            $httpHeader = array_map(function ($key, $value)
-            {
-                return $key . ': ' . $value;
-            }, array_keys($headers), $headers);
+            if ($result === false)
+                return \S\HttpClient\Response::fail(0, 'Cancel request');
+        }
 
-            $postFields = $this->isContentTypeUrlencoded($request)
-                ? http_build_query($body)
-                : json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $response = parent::send($request);
 
-            $options = [
-                CURLOPT_HTTPHEADER => $httpHeader,
-                CURLOPT_RETURNTRANSFER => 1,
-                CURLOPT_TIMEOUT => 90,
-                CURLOPT_CUSTOMREQUEST => $request->getMethod(),
-                CURLOPT_POSTFIELDS => $postFields
-            ];
-
-            $url = $this->baseUrl . $request->getUrl();
-            if (!empty($request->getQueryParams()))
-                $url .= '?' . http_build_query($request->getQueryParams());
-
-            $ch = curl_init($url);
-            curl_setopt_array($ch, $options);
-
-            $result = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-            $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-            curl_close($ch);
-
-            $content = $result;
-            if ($contentType == 'application/json')
-                $content = json_decode($content);
-
-            $response = $result === false
-                ? \S\HttpClient\Response::fail($httpCode, curl_error($ch))
-                : \S\HttpClient\Response::success($httpCode, $content);
-        } catch (Exception $e)
+        if (isset($this->afterSendCallback))
         {
-            $response = \S\HttpClient\Response::fail(0, $e->getMessage());
+            $func = $this->afterSendCallback;
+            $response = call_user_func($func, $response);
         }
 
         return $response;
-    }
-
-    private function isContentTypeUrlencoded(Request $request): bool
-    {
-        $headers = $request->getHeaders();
-        $contentType = $headers['Content-Type'] ?? $headers['content-type'] ?? null;
-
-        return $contentType == 'application/x-www-form-urlencoded';
     }
 }

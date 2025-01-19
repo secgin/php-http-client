@@ -13,5 +13,8 @@
             "name": "secgin"
         }
     ],
-    "require": {}
+    "require": {
+      "ext-json": "*",
+      "ext-curl": "*"
+    }
 }
