@@ -33,6 +33,11 @@ final class Request implements Abstracts\Request
         return new self($uri, 'GET');
     }
 
+    public static function delete(string $uri): self
+    {
+        return new self($uri, 'DELETE');
+    }
+
     public function setBasicAuthentication(string $username, string $password): self
     {
         return $this->addHeader(
