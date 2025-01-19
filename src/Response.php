@@ -40,9 +40,9 @@ final class Response implements Abstracts\Response
         return new Response($success, $httpCode, $content, $message);
     }
 
-    public static function fail(int $httpCode, ?string $message, ?string $content = null): self
+    public static function fail(int $httpCode, ?string $message, $content = null): self
     {
-        return new Response(false, $httpCode, $message, $content);
+        return new Response(false, $httpCode, $content, $message);
     }
 
     #region Response Interface
