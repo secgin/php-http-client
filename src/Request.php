@@ -14,6 +14,8 @@ final class Request implements Abstracts\Request
 
     private array $queryParams;
 
+    private array $options;
+
     public function __construct(string $url, string $method = 'GET')
     {
         $this->url = $url;
@@ -21,6 +23,7 @@ final class Request implements Abstracts\Request
         $this->headers = [];
         $this->body = [];
         $this->queryParams = [];
+        $this->options = [];
     }
 
     public static function post(string $uri): self
@@ -87,6 +90,12 @@ final class Request implements Abstracts\Request
         return $this;
     }
 
+    public function setOptions(array $options): self
+    {
+        $this->options = $options;
+        return $this;
+    }
+
     #region Request Interface
     public function getUrl(): string
     {
@@ -111,6 +120,11 @@ final class Request implements Abstracts\Request
     public function getMethod(): string
     {
         return $this->method;
+    }
+
+    public function getOptions(): array
+    {
+        return $this->options;
     }
     #endregion
 }

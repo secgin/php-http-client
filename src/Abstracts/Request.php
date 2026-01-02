@@ -13,4 +13,6 @@ interface Request
     public function getBody(): array;
 
     public function getMethod(): string;
+
+    public function getOptions(): array;
 }

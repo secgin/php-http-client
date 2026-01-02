@@ -30,14 +30,19 @@ abstract class AbstractClient
     {
         try
         {
-            $headers = array_merge($this->defaultHeaders, $request->getHeaders());
-            $body = $request->getBody();
+            $url = $this->baseUrl . $request->getUrl();
+            if (!empty($request->getQueryParams()))
+                $url .= '?' . http_build_query($request->getQueryParams());
 
+            $ch = curl_init($url);
+
+            $headers = array_merge($this->defaultHeaders, $request->getHeaders());
             $httpHeader = array_map(function ($key, $value)
             {
                 return $key . ': ' . $value;
             }, array_keys($headers), $headers);
 
+            $body = $request->getBody();
             $postFields = $this->isContentTypeUrlencoded($request)
                 ? http_build_query($body)
                 : json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -49,12 +54,10 @@ abstract class AbstractClient
                 CURLOPT_CUSTOMREQUEST => $request->getMethod(),
                 CURLOPT_POSTFIELDS => $postFields
             ];
-
-            $url = $this->baseUrl . $request->getUrl();
-            if (!empty($request->getQueryParams()))
-                $url .= '?' . http_build_query($request->getQueryParams());
-
-            $ch = curl_init($url);
+            foreach ($request->getOptions() as $key => $value)
+            {
+                $options[$key] = $value;
+            }
             curl_setopt_array($ch, $options);
 
             $result = curl_exec($ch);
